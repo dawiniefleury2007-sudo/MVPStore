@@ -1,0 +1,4 @@
+import type { ReactNode } from 'react';
+import EmptyState from '@/components/features/EmptyState';
+interface Props {headers:string[];rows:ReactNode[][];empty?:string;}
+export default function DataTable({headers,rows,empty='No records yet'}:Props){return <div className="solid-panel overflow-hidden">{rows.length?<div className="overflow-x-auto"><table className="w-full text-sm text-left whitespace-nowrap"><thead className="bg-background/35 text-muted text-xs uppercase tracking-wider"><tr>{headers.map(h=><th className="px-5 py-4 font-medium" key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr className="border-t border-accent/10 hover:bg-accent/5" key={i}>{row.map((cell,j)=><td className="px-5 py-4" key={j}>{cell}</td>)}</tr>)}</tbody></table></div>:<EmptyState title={empty} description="Your records will appear here as you use MVP Store."/>}</div>;}

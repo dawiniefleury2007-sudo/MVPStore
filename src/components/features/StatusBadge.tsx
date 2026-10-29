@@ -1,0 +1,2 @@
+interface Props {status:string;}
+export default function StatusBadge({status}:Props){const color=['active','completed','unbanned','online'].includes(status)?'text-success bg-success/10':['banned','rejected','expired'].includes(status)?'text-danger bg-danger/10':'text-accent bg-accent/10';return <span className={`pill capitalize ${color}`}><span className="w-1.5 h-1.5 rounded-full bg-current"/>{status}</span>;}

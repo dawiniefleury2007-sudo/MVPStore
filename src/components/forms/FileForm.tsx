@@ -1,0 +1,9 @@
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { toast } from 'sonner';
+import { fileSchema } from '@/lib/validations';
+import { useStore } from '@/stores/StoreProvider';
+import { uid } from '@/constants/store';
+interface Props {type:'product'|'setup';}
+export default function FileForm({type}:Props){const {data,update,log}=useStore();const {register,handleSubmit,reset,formState:{errors}}=useForm<z.infer<typeof fileSchema>>({resolver:zodResolver(fileSchema),defaultValues:{type,productId:data.products[0]?.id}});return <form className="glass p-6" onSubmit={handleSubmit(v=>{update(d=>({...d,files:[{...v,id:uid(),date:new Date().toISOString()},...d.files]}));log('File published',v.name);toast.success('File published for activated customers');reset({type,productId:data.products[0]?.id,name:'',url:'',image:''});})}><h2 className="section-title">{type==='product'?'Product MVP files':'Setup files'}</h2><p className="text-muted text-sm mt-2 mb-6">Publish a file for customers with an active product license.</p><div className="grid md:grid-cols-2 gap-4"><label><span className="label">Product</span><select className="input" {...register('productId')}>{data.products.map(p=><option value={p.id} key={p.id}>{p.name}</option>)}</select></label><label><span className="label">File name</span><input className="input" {...register('name')} placeholder="MVP Panel v1.0"/></label><label><span className="label">Image URL</span><input className="input" {...register('image')} placeholder="https://…"/></label><label><span className="label">Download URL (HTTPS)</span><input className="input" {...register('url')} placeholder="https://…"/></label></div>{Object.keys(errors).length>0&&<p className="text-xs text-danger mt-3">! Complete every field and provide valid image and HTTPS download URLs.</p>}<button className="btn-secondary mt-6">Publish file</button></form>;}

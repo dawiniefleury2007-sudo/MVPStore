@@ -1,0 +1,4 @@
+import { Globe2, ChevronDown } from 'lucide-react';
+import { useLanguage } from '@/hooks/useLanguage';
+import { LANGUAGES, type Language } from '@/constants/translations';
+export default function LanguageSelect(){const {language,setLanguage,t}=useLanguage();return <label className="relative flex items-center gap-2 text-sm"><Globe2 className="w-4 h-4 text-muted"/><span className="sr-only">{t('language')}</span><select value={language} onChange={e=>setLanguage(e.target.value as Language)} className="appearance-none bg-transparent pr-5 py-3 min-h-11 cursor-pointer text-sm w-16" aria-label={t('language')}>{Object.entries(LANGUAGES).map(([key,value])=><option key={key} value={key}>{key.toUpperCase()} · {value}</option>)}</select><ChevronDown className="w-3 h-3 absolute right-0 pointer-events-none"/></label>;}

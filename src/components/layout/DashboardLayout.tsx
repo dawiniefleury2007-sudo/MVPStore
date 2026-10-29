@@ -1,0 +1,10 @@
+import { useState, type ReactNode } from 'react';
+import { Navigate } from 'react-router-dom';
+import { Menu, Bell, ShieldCheck } from 'lucide-react';
+import { toast } from 'sonner';
+import { useStore } from '@/stores/StoreProvider';
+import Sidebar from '@/components/layout/Sidebar';
+import LanguageSelect from '@/components/features/LanguageSelect';
+import UserMenu from '@/components/features/UserMenu';
+interface Props {children:ReactNode;admin?:boolean;}
+export default function DashboardLayout({children,admin=false}:Props){const {user}=useStore();const [open,setOpen]=useState(false);if(!user)return <Navigate to="/login" replace/>;if(admin&&user.email!=='mvp-cheats@test.com')return <Navigate to="/account?nav=overview" replace/>;return <div className="min-h-screen"><Sidebar admin={admin} open={open} onClose={()=>setOpen(false)}/><div className="lg:pl-[268px]"><header className="h-20 border-b border-accent/10 px-5 md:px-8 flex items-center justify-between bg-background/30"><div className="flex items-center gap-3"><button onClick={()=>setOpen(true)} className="lg:hidden w-11 h-11 flex items-center justify-center" aria-label="Open sidebar"><Menu size={23}/></button><div className="text-xs text-muted flex items-center gap-2"><ShieldCheck size={15} className="text-accent"/>MVP / <span className="text-foreground">{admin?'Administration':'Client hub'}</span></div></div><div className="flex items-center gap-4"><LanguageSelect/><button onClick={()=>toast.info('You are all caught up.')} className="w-11 h-11 flex items-center justify-center glass" aria-label="Notifications"><Bell size={18}/></button><UserMenu/></div></header><main className="p-5 md:p-8 lg:p-10 max-w-[1600px] mx-auto"><div className="flex items-center gap-2 text-[11px] text-muted mb-7 px-3 py-2 border border-accent/15 rounded-lg w-fit bg-background/30"><span className="h-1.5 w-1.5 bg-accent rounded-full"/>Local preview · Data saved in this browser · No live backend</div>{children}</main><footer className="text-[11px] text-muted flex justify-between px-8 py-6"><span>© MVP Store {new Date().getFullYear()}</span><span>One account. Every possibility.</span></footer></div></div>;}

@@ -1,0 +1,9 @@
+import { useState } from 'react';
+import { Search, SlidersHorizontal } from 'lucide-react';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
+import ProductCard from '@/components/features/ProductCard';
+import EmptyState from '@/components/features/EmptyState';
+import { useStore } from '@/stores/StoreProvider';
+import { useLanguage } from '@/hooks/useLanguage';
+export default function Products(){const {data}=useStore();const {t}=useLanguage();const [search,setSearch]=useState('');return <><Header/><main className="max-w-[1320px] mx-auto px-6 md:px-10 pt-16"><div className="text-center reveal"><span className="pill text-accent uppercase tracking-wider">The collection</span><h1 className="text-5xl md:text-6xl font-bold tracking-tight mt-6">Find your <span className="text-accent">next level.</span></h1><p className="text-muted mt-5">Premium panels. One seamless experience.</p></div><div className="flex justify-between items-center gap-4 mt-12 mb-8"><span className="text-sm flex gap-2 items-center text-muted"><SlidersHorizontal size={17}/>{data.products.length} {t('products').toLowerCase()}</span><label className="relative max-w-xs"><span className="sr-only">Search products</span><Search className="absolute left-3 top-3.5 text-muted w-4 h-4"/><input className="input !pl-10" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search products…"/></label></div><div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">{data.products.filter(p=>p.name.toLowerCase().includes(search.toLowerCase())).map((p,i)=><ProductCard product={p} index={i} key={p.id}/>)}</div>{!data.products.some(p=>p.name.toLowerCase().includes(search.toLowerCase()))&&<EmptyState title="No matching products" description="Try a different product name."/>}</main><Footer/></>;}

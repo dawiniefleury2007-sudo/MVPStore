@@ -1,0 +1,5 @@
+import { useState } from 'react';
+import { Eye, EyeOff, Copy, KeyRound } from 'lucide-react';
+import { toast } from 'sonner';
+interface Props {value?:string;}
+export default function LoaderKey({value}:Props){const [reveal,setReveal]=useState(false);return <div><span className="eyebrow !text-[10px] !text-muted">Loader credentials</span><div className="flex items-center gap-3 mt-2"><KeyRound size={17} className="text-accent"/><code className="text-xs break-all">{value?(reveal?value:`${value.slice(0,7)}••••••••`):'Awaiting admin assignment'}</code>{value&&<><button className="w-11 h-11 flex justify-center items-center text-muted" onClick={()=>setReveal(!reveal)} aria-label="Reveal credentials">{reveal?<EyeOff size={16}/>:<Eye size={16}/>}</button><button className="w-11 h-11 flex justify-center items-center text-muted" aria-label="Copy credentials" onClick={()=>navigator.clipboard.writeText(value).then(()=>toast.success('Copied'),()=>toast.error('Unable to copy. Reveal and copy manually.'))}><Copy size={15}/></button></>}</div></div>;}

@@ -1,2 +1,1 @@
-import { useStore } from '@/stores/StoreProvider';
-export default function CloudStatus(){const {error,loading,refresh}=useStore();if(!error&&!loading)return null;return <aside role={error?'alert':'status'} className="fixed bottom-4 left-4 z-[75] solid-panel p-4 max-w-[calc(100vw-32px)]"><p className={error?'text-danger':'text-muted'}>{error?'Cloud data could not be loaded. Check your connection and function deployment.':'Loading Cloud data…'}</p>{error&&<button className="btn-secondary mt-3" onClick={refresh}>Retry</button>}</aside>;}
+

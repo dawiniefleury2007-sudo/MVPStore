@@ -75,7 +75,7 @@ export async function feed(userId: string | null, page: number, productId?: stri
   );
 }
 export async function leaderboard(page:number) {
- const {data,error}=await backend.from('xp_accounts').select('user_id,balance,total_earned,user_profiles(username,avatar_url)').order('balance',{ascending:false}).order('user_id').range(page*25,page*25+24);if(error)throw new Error('Unable to load leaderboard');return data;
+ const {data,error}=await backend.from('xp_accounts').select('user_id,balance,total_earned,user_profiles!xp_accounts_user_id_fkey(username,avatar_url)').order('balance',{ascending:false}).order('user_id').range(page*25,page*25+24);if(error)throw new Error('Unable to load leaderboard');return data;
 }
 export async function searchUsers(id:string,prefix:string,page:number) {
  return rpc('mvp_search_users',{p_user:id,p_prefix:prefix,p_page:page});

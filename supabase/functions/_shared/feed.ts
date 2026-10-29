@@ -11,7 +11,7 @@ export async function feed(userId: string | null, page: number, productId?: stri
     'title',
     'image_path',
     'created_at',
-    'author:user_profiles(username,avatar_url)',
+    'author:user_profiles!feedback_user_id_fkey(username,avatar_url)',
     'feedback_likes(user_id)',
     'feedback_replies(',
     '  id,user_id,body,created_at,',

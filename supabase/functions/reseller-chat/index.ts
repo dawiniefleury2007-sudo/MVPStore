@@ -254,6 +254,7 @@ Deno.serve(async (req) => {
       );
 
       const imageUrl = await signedImage(
+        user.id,
         'mvp-contact',
         imagePath,
       );

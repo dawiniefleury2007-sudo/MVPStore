@@ -36,26 +36,50 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let mounted = true;
-    let sessionEventReceived = false;
+    let initialSessionSettled = false;
+
     const reportError = (error: unknown) => {
       if (mounted) toast.error(error instanceof Error ? error.message : 'Unable to restore your session. Please retry signing in.');
     };
-    void supabase.auth.getSession().then(({ data, error }) => {
+
+    // Wait for the initial session before declaring auth ready.
+    // This prevents brief "logged out" UI on refresh and reduces flicker.
+    supabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (!mounted) return;
+        if (error) reportError(error);
+
+        const initialUser = data.session?.user ? mapSupabaseUser(data.session.user) : null;
+        setUser(initialUser);
+
+        // Only mark loading complete after we have the first authoritative session.
+        if (!initialSessionSettled) {
+          initialSessionSettled = true;
+          setLoading(false);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!mounted) return;
+        reportError(error);
+        if (!initialSessionSettled) {
+          initialSessionSettled = true;
+          setLoading(false);
+        }
+      });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
-      if (error) reportError(error);
-      if (!sessionEventReceived) setUser(data.session?.user ? mapSupabaseUser(data.session.user) : null);
-      setLoading(false);
-    }, (error: unknown) => {
-      if (!mounted) return;
-      reportError(error);
-      setLoading(false);
+
+      const nextUser = session?.user ? mapSupabaseUser(session.user) : null;
+      setUser(nextUser);
+
+      // Mark the first real auth event as settled (covers INITIAL_SESSION, SIGNED_IN, etc.)
+      if (!initialSessionSettled) {
+        initialSessionSettled = true;
+        setLoading(false);
+      }
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return;
-      sessionEventReceived = true;
-      setUser(session?.user ? mapSupabaseUser(session.user) : null);
-      setLoading(false);
-    });
+
     const onOAuthMessage = (event: MessageEvent<unknown>) => {
       const message = event.data;
       if (typeof message !== 'object' || message === null || !('type' in message)) return;
@@ -66,6 +90,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     };
     window.addEventListener('message', onOAuthMessage);
+
     return () => {
       mounted = false;
       subscription.unsubscribe();

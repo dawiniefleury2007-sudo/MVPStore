@@ -395,6 +395,7 @@ export async function snapshot(userId: string | null) {
       ) {
         try {
           proof = await signedImage(
+            userId,
             'mvp-proofs',
             order.proof_path,
           );

@@ -1,0 +1,4 @@
+[functions.mvp-api]
+verify_jwt = false
+[functions.reseller-chat]
+verify_jwt = false

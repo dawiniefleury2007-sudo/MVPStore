@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
-import { api } from '@/lib/api';
+import { api } from '@/lib/supabase';
 import { useStore } from '@/stores/StoreProvider';
 import XpConfigForm from '@/components/forms/XpConfigForm';
 const schema=z.object({name:z.string().min(2).max(100),role:z.string().min(2).max(100),image:z.string().url(),discordUrl:z.string().url().refine(v=>/^https:\/\/discord\.(com|gg)\//.test(v))});

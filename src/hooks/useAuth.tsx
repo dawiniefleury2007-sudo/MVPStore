@@ -1,7 +1,7 @@
 import { createContext,useContext,useEffect,useState,type ReactNode } from 'react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 import { authService,exchangeOAuthCodeOnce,startGoogleLogin } from '@/lib/auth';
 interface AuthState {user:SupabaseUser|null;loading:boolean;service:typeof authService;google:()=>Promise<void>;}
 const AuthContext=createContext<AuthState|null>(null);

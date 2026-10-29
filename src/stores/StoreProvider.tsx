@@ -1,7 +1,7 @@
 import { createContext,useContext,useCallback,type ReactNode } from 'react';
 import { useQuery,useQueryClient,useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
+import { api } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { EMPTY_DATA } from '@/constants/store';
 import type { StoreData,User,Snapshot } from '@/types/store';

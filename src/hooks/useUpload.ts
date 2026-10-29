@@ -1,6 +1,6 @@
 import { useEffect,useState } from 'react';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
+import { api } from '@/lib/supabase';
 interface Ticket {path:string;token:string;}
 export function useUpload(bucket:string){const [path,setPath]=useState('');const [preview,setPreview]=useState('');const [progress,setProgress]=useState(0);const [uploading,setUploading]=useState(false);
  useEffect(()=>()=>{if(preview)URL.revokeObjectURL(preview);},[preview]);

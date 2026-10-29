@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 const exchanges=new Map<string,Promise<void>>();
 export function exchangeOAuthCodeOnce(code:string):Promise<void>{const existing=exchanges.get(code);if(existing)return existing;const promise=supabase.auth.exchangeCodeForSession(code).then(({error})=>{if(error)throw new Error('Unable to complete login. Restart sign-in and try again.');});exchanges.set(code,promise);return promise;}
 export function startGoogleLogin():Promise<void>{

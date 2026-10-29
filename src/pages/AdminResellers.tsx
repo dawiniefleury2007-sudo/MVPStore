@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
+import { api } from '@/lib/supabase';
 import { useStore } from '@/stores/StoreProvider';
 import type { ResellerAccess } from '@/types/store';
 interface Match {id:string;username:string;avatar_url?:string;}

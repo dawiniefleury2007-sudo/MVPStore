@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { supabase } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 export interface ChatMessage {role:'user'|'assistant';content:string;}
 const chunkSchema=z.object({choices:z.array(z.object({delta:z.object({content:z.string().optional()})}))});
 export async function streamChat(messages:ChatMessage[],imagePath:string|undefined,onText:(text:string)=>void,signal:AbortSignal){

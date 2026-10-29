@@ -1,7 +1,7 @@
 import { Download } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
+import { api } from '@/lib/supabase';
 import { useStore } from '@/stores/StoreProvider';
 import EmptyState from '@/components/features/EmptyState';
 import { dateLabel } from '@/constants/store';

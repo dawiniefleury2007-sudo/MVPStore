@@ -19,6 +19,20 @@ interface AuthContextValue {
 interface AuthProviderProps { children: ReactNode; }
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const SESSION_RESTORE_TIMEOUT_MS = 10000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timeoutId: number | undefined;
+  return Promise.race([
+    promise.finally(() => {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    }),
+    new Promise<T>((_, reject) => {
+      timeoutId = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+    }),
+  ]);
+}
+
 function mapSupabaseUser(user: SupabaseUser): AuthUser {
   const metadata = user.user_metadata;
   const name = metadata?.username || metadata?.full_name;
@@ -44,7 +58,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Wait for the initial session before declaring auth ready.
     // This prevents brief "logged out" UI on refresh and reduces flicker.
-    supabase.auth.getSession()
+    withTimeout(
+      supabase.auth.getSession(),
+      SESSION_RESTORE_TIMEOUT_MS,
+      'Connection timeout while restoring your session. You can still continue and retry sign-in.',
+    )
       .then(({ data, error }) => {
         if (!mounted) return;
         if (error) reportError(error);

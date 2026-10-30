@@ -1,5 +1,19 @@
 import { createClient, FunctionsHttpError } from '@supabase/supabase-js';
 
+const CLOUD_REQUEST_TIMEOUT_MS = 12000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timeoutId: number | undefined;
+  return Promise.race([
+    promise.finally(() => {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    }),
+    new Promise<T>((_, reject) => {
+      timeoutId = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+    }),
+  ]);
+}
+
 // All browser authentication and Cloud requests share this one PKCE client.
 export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -18,9 +32,13 @@ export async function api<T = unknown>(
   operation: string,
   parameters: Record<string, unknown> = {},
 ): Promise<T> {
-  const { data, error } = await supabase.functions.invoke('mvp-api', {
-    body: { ...parameters, operation },
-  });
+  const { data, error } = await withTimeout(
+    supabase.functions.invoke('mvp-api', {
+      body: { ...parameters, operation },
+    }),
+    CLOUD_REQUEST_TIMEOUT_MS,
+    'The server took too long to respond. Please retry in a moment.',
+  );
 
   if (error) {
     if (error instanceof FunctionsHttpError) {

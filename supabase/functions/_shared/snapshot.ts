@@ -167,8 +167,57 @@ export async function snapshot(userId: string | null) {
     throw new Error('Unable to verify account');
   }
 
+  // OAuth users can exist in auth.users before a legacy profile row exists.
+  // Provision the minimum profile required by permission and account queries.
+  let profiles = await rows(
+    'user_profiles',
+    'id,username,email,avatar_url,created_at',
+    { key: 'id', value: userId },
+    1,
+  );
+  if (!profiles[0]) {
+    const metadata = authData.user.user_metadata ?? {};
+    const metadataName =
+      typeof metadata.full_name === 'string'
+        ? metadata.full_name
+        : typeof metadata.name === 'string'
+          ? metadata.name
+          : '';
+    const email = authData.user.email ?? '';
+    const fallbackName = email.split('@')[0] || `Member-${userId.slice(0, 8)}`;
+    const username = (metadataName.trim() || fallbackName).slice(0, 100);
+    const avatar =
+      typeof metadata.avatar_url === 'string'
+        ? metadata.avatar_url.slice(0, 2000)
+        : null;
+    let { error: profileInsertError } = await backend
+      .from('user_profiles')
+      .insert({ id: userId, username, email, avatar_url: avatar });
+
+    // If usernames are unique, retry a collision with a deterministic name.
+    if (profileInsertError && /duplicate|unique/i.test(profileInsertError.message)) {
+      ({ error: profileInsertError } = await backend
+        .from('user_profiles')
+        .insert({
+          id: userId,
+          username: `Member-${userId.slice(0, 8)}`,
+          email,
+          avatar_url: avatar,
+        }));
+    }
+    // A database trigger or another request may have provisioned it first.
+    if (profileInsertError && !/duplicate|unique/i.test(profileInsertError.message)) {
+      throw new Error('Unable to create account profile');
+    }
+    profiles = await rows(
+      'user_profiles',
+      'id,username,email,avatar_url,created_at',
+      { key: 'id', value: userId },
+      1,
+    );
+  }
+
   const [
-    profiles,
     xpAccounts,
     claimResult,
     claimTypes,
@@ -177,12 +226,6 @@ export async function snapshot(userId: string | null) {
     notificationResult,
     resellerAccess,
   ] = await Promise.all([
-    rows(
-      'user_profiles',
-      'id,username,email,avatar_url,created_at',
-      { key: 'id', value: userId },
-      1,
-    ),
     rows(
       'xp_accounts',
       'balance,total_earned',

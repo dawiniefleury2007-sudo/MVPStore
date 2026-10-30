@@ -1,5 +1,9 @@
 # Welcome to your OnSpace project
 
+## Social sign-in setup
+
+The login page uses Supabase OAuth for Google, Apple and Discord. Enable each provider in **Supabase Dashboard → Authentication → Providers**, add the provider credentials, and allow the deployed site URL plus `/auth/callback` in **Authentication → URL Configuration**. The app uses the current browser origin for the callback, so local and production URLs do not need separate frontend changes.
+
 ## How can I edit this code?
 
 There are several ways of editing your application.

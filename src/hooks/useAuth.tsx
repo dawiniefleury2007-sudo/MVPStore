@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-import { authErrorMessage, authService, exchangeOAuthCodeOnce, startGoogleLogin } from '@/lib/auth';
+import { authErrorMessage, authService, exchangeOAuthCodeOnce, startAppleLogin, startDiscordLogin, startGoogleLogin } from '@/lib/auth';
 
 interface AuthUser {
   id: string;
@@ -16,6 +16,8 @@ interface AuthContextValue {
   authError: string | null;
   service: typeof authService;
   google: typeof startGoogleLogin;
+  apple: typeof startAppleLogin;
+  discord: typeof startDiscordLogin;
 }
 interface AuthProviderProps { children: ReactNode; }
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -124,7 +126,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       window.removeEventListener('message', onOAuthMessage);
     };
   }, []);
-  const value = useMemo<AuthContextValue>(() => ({ user, loading, authError, service: authService, google: startGoogleLogin }), [user, loading, authError]);
+  const value = useMemo<AuthContextValue>(() => ({
+    user,
+    loading,
+    authError,
+    service: authService,
+    google: startGoogleLogin,
+    apple: startAppleLogin,
+    discord: startDiscordLogin,
+  }), [user, loading, authError]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

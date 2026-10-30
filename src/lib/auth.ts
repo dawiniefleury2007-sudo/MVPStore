@@ -22,7 +22,7 @@ export function authErrorMessage(error: unknown): string {
   if (/invalid api key|not found|404/.test(normalized) || status === 404) {
     return 'The sign-in service is not configured correctly. Contact support.';
   }
-  if (/^enter |^use at least |^password /.test(normalized)) return message;
+  if (/^enter |^use at least |^password |尚未在 supabase|not enabled|unsupported provider/.test(normalized)) return message;
   return 'Sign-in could not be completed. Check your details and retry.';
 }
 
@@ -86,7 +86,7 @@ function isInIframe(): boolean {
   try { return window.self !== window.top; } catch { return true; }
 }
 let oauthPopup: Window | null = null;
-async function startSocialLogin(provider: 'google' | 'apple'): Promise<void> {
+async function startSocialLogin(provider: 'google' | 'apple' | 'discord'): Promise<void> {
   const iframe = isInIframe();
   const left = Math.max(0, window.screenX + (window.outerWidth - 520) / 2);
   const top = Math.max(0, window.screenY + (window.outerHeight - 720) / 2);
@@ -100,7 +100,13 @@ async function startSocialLogin(provider: 'google' | 'apple'): Promise<void> {
     const { data, error } = await supabase.auth.signInWithOAuth({ provider, options: {
       redirectTo: `${window.location.origin}/auth/callback`, skipBrowserRedirect: true,
     } });
-    if (error || !data.url) throw new Error('无法启动第三方登录，请检查登录配置后重试。');
+    if (error) {
+      if (/provider is not enabled|unsupported provider/i.test(error.message)) {
+        throw new Error(`${provider} 登录尚未在 Supabase Auth Providers 中启用。`);
+      }
+      throw error;
+    }
+    if (!data.url) throw new Error('无法启动第三方登录，请检查登录配置后重试。');
     if (iframe && popup) {
       if (popup.closed) throw new Error('登录弹窗已关闭，请重新登录。');
       popup.location.assign(data.url);
@@ -114,4 +120,12 @@ async function startSocialLogin(provider: 'google' | 'apple'): Promise<void> {
 
 export function startGoogleLogin(): Promise<void> {
   return startSocialLogin('google');
+}
+
+export function startAppleLogin(): Promise<void> {
+  return startSocialLogin('apple');
+}
+
+export function startDiscordLogin(): Promise<void> {
+  return startSocialLogin('discord');
 }

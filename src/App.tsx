@@ -56,7 +56,7 @@ export default function App() {
                     <main className="min-h-screen grid place-items-center">
                       <div className="glass px-10 py-8 text-center">
                         <p className="font-display text-2xl font-bold text-accent">
-                          MVP
+                          ANTHONY
                         </p>
                         <p className="text-muted mt-3" role="status">
                           Loading your experience…
@@ -92,7 +92,7 @@ export default function App() {
                     />
 
                     <Route
-                      path="/mvp-cheats/server/en"
+                      path="/anthony-alone/server/en"
                       element={
                         <RouteGuard role="admin">
                           <Admin />

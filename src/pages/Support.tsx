@@ -15,7 +15,7 @@ export default function Support() {
         <h2 id="support-topics" className="section-title">Start with your account</h2>
         <div className="mt-6 space-y-6">
           <div><h3 className="font-semibold">Payment awaiting review?</h3><p className="text-muted mt-2 leading-relaxed">Payment screenshots are reviewed manually by an administrator. Check your order status before contacting support.</p><Link to="/account?nav=orders" className="btn-secondary mt-3 hover:-translate-y-0.5">View your orders</Link></div>
-          <div className="border-t border-accent/15 pt-6"><h3 className="font-semibold">Need to activate a license or download files?</h3><p className="text-muted mt-2 leading-relaxed">Use MVP Panel to redeem a license and access downloads. Product downloads require active, eligible product access.</p><Link to="/account?nav=mvp" className="btn-secondary mt-3 hover:-translate-y-0.5">Open MVP Panel</Link></div>
+          <div className="border-t border-accent/15 pt-6"><h3 className="font-semibold">Need to activate a license or download files?</h3><p className="text-muted mt-2 leading-relaxed">Use ANTHONY ALONE Panel to redeem a license and access downloads. Product downloads require active, eligible product access.</p><Link to="/account?nav=mvp" className="btn-secondary mt-3 hover:-translate-y-0.5">Open ANTHONY ALONE Panel</Link></div>
           <div className="border-t border-accent/15 pt-6"><h3 className="font-semibold">Hardware reset requests</h3><p className="text-muted mt-2 leading-relaxed">Hardware resets are not currently available through the panel. Contact the store team to discuss your product's requirements.</p></div>
         </div>
       </section>

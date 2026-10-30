@@ -1,18 +1,23 @@
-import { createClient, FunctionsHttpError } from '@supabase/supabase-js';
+import { createClient, FunctionsFetchError, FunctionsHttpError, FunctionsRelayError } from '@supabase/supabase-js';
 
 const CLOUD_REQUEST_TIMEOUT_MS = 12000;
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
-  let timeoutId: number | undefined;
-  return Promise.race([
-    promise.finally(() => {
-      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
-    }),
-    new Promise<T>((_, reject) => {
-      timeoutId = window.setTimeout(() => reject(new Error(message)), timeoutMs);
-    }),
-  ]);
-}
+const timedFetch: typeof fetch = (input, init) => {
+  const requestInit = init ?? {};
+  const controller = new AbortController();
+  const timeoutId = globalThis.setTimeout(() => {
+    controller.abort(new DOMException('Request timed out', 'TimeoutError'));
+  }, CLOUD_REQUEST_TIMEOUT_MS);
+  const abortFromCaller = () => controller.abort(requestInit.signal?.reason);
+
+  if (requestInit.signal?.aborted) abortFromCaller();
+  else requestInit.signal?.addEventListener('abort', abortFromCaller, { once: true });
+
+  return fetch(input, { ...requestInit, signal: controller.signal }).finally(() => {
+    globalThis.clearTimeout(timeoutId);
+    requestInit.signal?.removeEventListener('abort', abortFromCaller);
+  });
+};
 
 // All browser authentication and Cloud requests share this one PKCE client.
 export const supabase = createClient(
@@ -25,6 +30,7 @@ export const supabase = createClient(
       autoRefreshToken: true,
       detectSessionInUrl: false,
     },
+    global: { fetch: timedFetch },
   },
 );
 
@@ -32,35 +38,46 @@ export async function api<T = unknown>(
   operation: string,
   parameters: Record<string, unknown> = {},
 ): Promise<T> {
-  const { data, error } = await withTimeout(
-    supabase.functions.invoke('mvp-api', {
-      body: { ...parameters, operation },
-    }),
-    CLOUD_REQUEST_TIMEOUT_MS,
-    'The server took too long to respond. Please retry in a moment.',
-  );
+  const { data, error } = await supabase.functions.invoke('mvp-api', {
+    body: { ...parameters, operation },
+    timeout: CLOUD_REQUEST_TIMEOUT_MS,
+  });
 
   if (error) {
     if (error instanceof FunctionsHttpError) {
       const status = error.context.status;
       const responseText = await error.context.text().catch(() => '');
-      let message = responseText || error.message;
-      if (responseText) {
-        try {
-          const response: unknown = JSON.parse(responseText);
-          if (
-            typeof response === 'object' && response !== null &&
-            'error' in response && typeof response.error === 'string'
-          ) {
-            message = response.error;
-          }
-        } catch {
-          // Non-JSON responses still provide useful server error details.
+      let serverMessage = '';
+      try {
+        const response: unknown = JSON.parse(responseText);
+        if (
+          typeof response === 'object' && response !== null &&
+          'error' in response && typeof response.error === 'string'
+        ) {
+          serverMessage = response.error;
         }
+      } catch {
+        // HTTP error bodies may be empty or non-JSON.
       }
-      throw new Error(`[Code: ${status}] ${message}`);
+
+      if (status === 401) throw new Error('Your session expired. Sign in again and retry.');
+      if (status === 403 && serverMessage) throw new Error(serverMessage);
+      if (status === 429) throw new Error('Too many requests. Wait a moment, then retry.');
+      if (status >= 500) throw new Error('The store service is temporarily unavailable. Please retry shortly.');
+      if (status === 400 && serverMessage) throw new Error(serverMessage);
+      if (status === 404) throw new Error('This store feature is not available right now.');
+      throw new Error('The store could not complete this request. Check the submitted information and retry.');
     }
-    throw new Error(error.message || 'Cloud request failed. Please try again.');
+    if (error instanceof FunctionsFetchError) {
+      const timedOut = error.context?.name === 'AbortError' || error.context?.name === 'TimeoutError';
+      throw new Error(timedOut
+        ? 'The store request timed out. Please retry in a moment.'
+        : 'Unable to reach the store service. Check your connection and retry.');
+    }
+    if (error instanceof FunctionsRelayError) {
+      throw new Error('The store service could not route this request. Please retry shortly.');
+    }
+    throw new Error('The store request failed. Please retry in a moment.');
   }
 
   if (

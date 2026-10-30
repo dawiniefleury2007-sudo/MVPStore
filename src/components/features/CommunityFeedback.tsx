@@ -1,8 +1,6 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, CircleAlert } from 'lucide-react';
-import { toast } from 'sonner';
 import FeedbackCard from '@/components/features/FeedbackCard';
 import EmptyState from '@/components/features/EmptyState';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,7 +18,6 @@ export default function CommunityFeedback({ productId }: CommunityFeedbackProps)
     staleTime: 15000,
     refetchInterval: 15000,
   });
-  useEffect(() => { if (query.error) toast.error(query.error.message); }, [query.error]);
 
   return (
     <section className="py-12" aria-label="Community feedback">

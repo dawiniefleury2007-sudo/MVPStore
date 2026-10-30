@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-import { authService, exchangeOAuthCodeOnce, startGoogleLogin } from '@/lib/auth';
+import { authErrorMessage, authService, exchangeOAuthCodeOnce, startGoogleLogin } from '@/lib/auth';
 
 interface AuthUser {
   id: string;
@@ -13,6 +13,7 @@ interface AuthUser {
 interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
+  authError: string | null;
   service: typeof authService;
   google: typeof startGoogleLogin;
 }
@@ -48,12 +49,17 @@ function mapSupabaseUser(user: SupabaseUser): AuthUser {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
   useEffect(() => {
     let mounted = true;
     let initialSessionSettled = false;
+    let authStateEventSeen = false;
 
     const reportError = (error: unknown) => {
-      if (mounted) toast.error(error instanceof Error ? error.message : 'Unable to restore your session. Please retry signing in.');
+      if (!mounted) return;
+      const message = authErrorMessage(error);
+      setAuthError(message);
+      if (window.location.pathname !== '/login') toast.error(message);
     };
 
     // Wait for the initial session before declaring auth ready.
@@ -64,8 +70,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       'Connection timeout while restoring your session. You can still continue and retry sign-in.',
     )
       .then(({ data, error }) => {
-        if (!mounted) return;
+        if (!mounted || authStateEventSeen) return;
         if (error) reportError(error);
+        else setAuthError(null);
 
         const initialUser = data.session?.user ? mapSupabaseUser(data.session.user) : null;
         setUser(initialUser);
@@ -77,7 +84,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       })
       .catch((error: unknown) => {
-        if (!mounted) return;
+        if (!mounted || authStateEventSeen) return;
         reportError(error);
         if (!initialSessionSettled) {
           initialSessionSettled = true;
@@ -88,8 +95,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
 
+      authStateEventSeen = true;
       const nextUser = session?.user ? mapSupabaseUser(session.user) : null;
       setUser(nextUser);
+      setAuthError(null);
 
       // Mark the first real auth event as settled (covers INITIAL_SESSION, SIGNED_IN, etc.)
       if (!initialSessionSettled) {
@@ -115,7 +124,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       window.removeEventListener('message', onOAuthMessage);
     };
   }, []);
-  const value = useMemo<AuthContextValue>(() => ({ user, loading, service: authService, google: startGoogleLogin }), [user, loading]);
+  const value = useMemo<AuthContextValue>(() => ({ user, loading, authError, service: authService, google: startGoogleLogin }), [user, loading, authError]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

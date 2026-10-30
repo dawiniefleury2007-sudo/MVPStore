@@ -24,6 +24,13 @@ export const backend = createClient(
 const IDENTIFIER_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 const MAX_ROWS = 500;
 
+export class AuthenticationError extends Error {
+  constructor() {
+    super('Authentication required');
+    this.name = 'AuthenticationError';
+  }
+}
+
 export async function identity(
   req: Request,
   optional = false,
@@ -34,14 +41,14 @@ export async function identity(
 
   if (!token) {
     if (optional) return null;
-    throw new Error('Authentication required');
+    throw new AuthenticationError();
   }
 
   const { data, error } = await backend.auth.getUser(token);
 
   if (error || !data.user) {
     if (optional) return null;
-    throw new Error('Authentication required');
+    throw new AuthenticationError();
   }
 
   return data.user;

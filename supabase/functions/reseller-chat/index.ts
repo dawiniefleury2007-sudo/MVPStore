@@ -1,6 +1,7 @@
 
 import { corsHeaders, json } from '../_shared/cors.ts';
 import {
+  AuthenticationError,
   identity,
   isAdmin,
   activeReseller,
@@ -74,6 +75,10 @@ function isRecord(
 }
 
 function errorResponse(error: unknown): Response {
+  if (error instanceof AuthenticationError) {
+    return json({ error: error.message }, 401);
+  }
+
   if (error instanceof HttpError) {
     return json(
       { error: error.message },

@@ -1,5 +1,31 @@
 import { supabase } from '@/lib/supabase';
 
+export function authErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message.trim() : '';
+  const normalized = message.toLowerCase();
+  const status = typeof error === 'object' && error !== null && 'status' in error
+    ? Number(error.status)
+    : undefined;
+
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return 'You are offline. Reconnect and retry signing in.';
+  }
+  if (/invalid login credentials/.test(normalized)) return 'Email or password is incorrect.';
+  if (/email not confirmed/.test(normalized)) return 'Confirm your email before signing in.';
+  if (/too many requests|rate limit|security purposes/.test(normalized) || status === 429) {
+    return 'Too many sign-in attempts. Wait a moment, then retry.';
+  }
+  if (/failed to fetch|networkerror|fetch failed|timeout|timed out|aborterror/.test(normalized)) {
+    return 'Unable to reach the sign-in service. Check your connection and retry.';
+  }
+  if (status && status >= 500) return 'The sign-in service is temporarily unavailable. Please retry shortly.';
+  if (/invalid api key|not found|404/.test(normalized) || status === 404) {
+    return 'The sign-in service is not configured correctly. Contact support.';
+  }
+  if (/^enter |^use at least |^password /.test(normalized)) return message;
+  return 'Sign-in could not be completed. Check your details and retry.';
+}
+
 // Reuse the application's single persistent PKCE client for every auth flow.
 export const authService = {
   async sendOtp(email: string) {
@@ -9,7 +35,7 @@ export const authService = {
     if (error) throw error;
   },
   async verify(email: string, token: string, password: string, name: string) {
-    if (!/^\d{4}$/.test(token)) throw new Error('Enter your 4-digit email code.');
+    if (!/^\d{4,8}$/.test(token)) throw new Error('Enter the email verification code.');
     if (password.length < 6) throw new Error('Use at least 6 characters for your password.');
     if (name.trim().length < 2) throw new Error('Enter a display name of at least 2 characters.');
     const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token, type: 'email' });

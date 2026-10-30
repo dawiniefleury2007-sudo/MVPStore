@@ -3,6 +3,7 @@
 import { corsHeaders, json } from '../_shared/cors.ts';
 import {
   backend,
+  AuthenticationError,
   identity,
   rpc,
   isAdmin,
@@ -103,6 +104,10 @@ function requiredString(
 }
 
 function errorResponse(error: unknown): Response {
+  if (error instanceof AuthenticationError) {
+    return json({ error: error.message }, 401);
+  }
+
   if (error instanceof HttpError) {
     return json({ error: error.message }, error.status);
   }
@@ -358,7 +363,8 @@ Deno.serve(async (req) => {
     }
 
     if (operation === 'upload') {
-      return json(await issueUpload(user.id, payload));
+      const upload = await issueUpload(user.id, payload);
+      return json({ path: upload.path, signedUrl: upload.signedUrl });
     }
 
     if (operation === 'download') {

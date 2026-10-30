@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { EMPTY_DATA } from '@/constants/store';
 import type { StoreData, User, Snapshot } from '@/types/store';
 
-const SNAPSHOT_CACHE_KEY = 'mvpstore.snapshot.v1';
+const CATALOG_CACHE_KEY = 'mvpstore.catalog.v1';
 
 interface StoreContextValue {
   data: StoreData;
@@ -23,25 +23,41 @@ interface StoreContextValue {
 
 const StoreContext = createContext<StoreContextValue | null>(null);
 
-function readCachedSnapshot(): Snapshot | null {
-  if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem(SNAPSHOT_CACHE_KEY);
-  if (!raw) return null;
+function isProductCatalog(value: unknown): value is StoreData['products'] {
+  return Array.isArray(value) && value.every(product =>
+    typeof product === 'object' && product !== null &&
+    typeof product.id === 'string' &&
+    typeof product.name === 'string' &&
+    typeof product.image === 'string' &&
+    Array.isArray(product.plans) && product.plans.every(plan =>
+      typeof plan === 'object' && plan !== null &&
+      typeof plan.name === 'string' && Number.isFinite(plan.price),
+    ),
+  );
+}
+
+function readCachedProducts(): StoreData['products'] {
+  if (typeof window === 'undefined') return [];
   try {
+    const raw = window.localStorage.getItem(CATALOG_CACHE_KEY);
+    if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed === 'object' && parsed !== null && 'data' in parsed) {
-      return parsed as Snapshot;
-    }
+    if (isProductCatalog(parsed)) return parsed;
+    window.localStorage.removeItem(CATALOG_CACHE_KEY);
   } catch {
-    window.localStorage.removeItem(SNAPSHOT_CACHE_KEY);
+    try {
+      window.localStorage.removeItem(CATALOG_CACHE_KEY);
+    } catch {
+      // Storage may be unavailable in private or restricted browsing modes.
+    }
   }
-  return null;
+  return [];
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const auth = useAuth();
   const client = useQueryClient();
-  const [cachedSnapshot, setCachedSnapshot] = useState<Snapshot | null>(() => readCachedSnapshot());
+  const [cachedProducts, setCachedProducts] = useState<StoreData['products']>(() => readCachedProducts());
 
   const query = useQuery<Snapshot, Error>({
     queryKey: ['snapshot', auth.user?.id || 'public'],
@@ -53,10 +69,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    if (!query.data || typeof window === 'undefined') return;
-    setCachedSnapshot(query.data);
     try {
-      window.localStorage.setItem(SNAPSHOT_CACHE_KEY, JSON.stringify(query.data));
+      window.localStorage.removeItem('mvpstore.snapshot.v1');
+    } catch {
+      // Storage may be unavailable in private or restricted browsing modes.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!query.data || typeof window === 'undefined') return;
+    const publicProducts = query.data.data.products.filter(product => product.available !== false);
+    setCachedProducts(publicProducts);
+    try {
+      window.localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify(publicProducts));
     } catch {
       // Ignore storage quota and privacy-mode errors.
     }
@@ -102,14 +127,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (result) toast.success(result.reward ? `You earned ${result.reward} XP` : 'Claim already processed');
   };
 
-  const snapshot = query.data || cachedSnapshot;
-  const user = auth.user && snapshot?.user?.id === auth.user.id ? snapshot.user : undefined;
-  const loading = auth.loading || (query.isPending && !snapshot);
+  const user = auth.user && query.data?.user?.id === auth.user.id ? query.data.user : undefined;
+  const loading = auth.loading || (query.isPending && cachedProducts.length === 0);
+  const data = query.data?.data || { ...EMPTY_DATA, products: cachedProducts };
 
   return (
     <StoreContext.Provider
       value={{
-        data: snapshot?.data || EMPTY_DATA,
+        data,
         user,
         loading,
         error: query.error,

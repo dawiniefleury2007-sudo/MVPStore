@@ -1,8 +1,6 @@
-import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { CircleAlert } from 'lucide-react';
-import { toast } from 'sonner';
 import FeedbackCard from '@/components/features/FeedbackCard';
 import EmptyState from '@/components/features/EmptyState';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,7 +17,6 @@ export default function FeedbackFeed() {
     queryFn: () => api<FeedbackPost[]>('feed', { page }),
     enabled: !loading, staleTime: 15000, refetchInterval: 15000,
   });
-  useEffect(() => { if (query.error) toast.error(query.error.message); }, [query.error]);
   const goToPage = (next: number) => {
     const updated = new URLSearchParams(params);
     if (next === 0) updated.delete('page'); else updated.set('page', String(next));

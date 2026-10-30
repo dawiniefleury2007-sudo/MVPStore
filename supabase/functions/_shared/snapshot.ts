@@ -155,11 +155,6 @@ export async function snapshot(userId: string | null) {
     return { data: empty };
   }
 
-  // Run maintenance before building the authenticated snapshot.
-  await rpc('mvp_maintain', {
-    p_user: userId,
-  });
-
   const { data: authData, error: authError } =
     await backend.auth.admin.getUserById(userId);
 
@@ -216,6 +211,11 @@ export async function snapshot(userId: string | null) {
       1,
     );
   }
+
+  // Profile-dependent maintenance must run after first-login provisioning.
+  await rpc('mvp_maintain', {
+    p_user: userId,
+  });
 
   const [
     xpAccounts,

@@ -1,5 +1,5 @@
 import type { StoreData } from '@/types/store';
-export const LOGO='https://cdn.discordapp.com/icons/1354751187492016210/858778f3ee8e15a4be032011e5da2ee6.webp?size=1024';
+export const LOGO='https://ugc.production.linktr.ee/576bbe95-b2a1-4251-9d8a-21b2dfcdffb0_An-ojNDI7j-wo0VOxBWTpsgtEjhfJmhhDz7UE2Nl-UKaq7HjvaOinPVYTBPMI-iWFTijItS8mk6vJikHPPi2eTPTgJTcY7fnO2W5.jpeg?io=true&size=thumbnail-stack_v1_0';
 export const BANNER='https://cdn.discordapp.com/banners/1354751187492016210/a_59933c54991fd6b6afcbfa43d468eb7c.webp?size=480&animated=true';
 export const CHARACTER='https://blazexiters.in/hero/blaze-character.png?v=pictures';
 export const CATEGORIES=['aimkill','silent cover','bypass emulator','uid bypass','ultra core'];

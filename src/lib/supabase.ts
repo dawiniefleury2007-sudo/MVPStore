@@ -19,7 +19,7 @@ const timedFetch: typeof fetch = (input, init) => {
   });
 };
 
-// All browser authentication and Cloud requests share this one PKCE client.
+// All authenticated browser requests share this one PKCE client.
 export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY,
@@ -34,12 +34,23 @@ export const supabase = createClient(
   },
 );
 
+// Public reads must not wait for the auth client's session/refresh lock.
+const publicClient = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
+  { accessToken: async () => null, global: { fetch: timedFetch } },
+);
+
 export async function api<T = unknown>(
   operation: string,
   parameters: Record<string, unknown> = {},
+  options: { anonymous?: boolean; signal?: AbortSignal } = {},
 ): Promise<T> {
-  const { data, error } = await supabase.functions.invoke('mvp-api', {
+  const client = options.anonymous ? publicClient : supabase;
+  const { data, error } = await client.functions.invoke('mvp-api', {
     body: { ...parameters, operation },
+    ...(options.anonymous ? { headers: { Authorization: '' } } : {}),
+    signal: options.signal,
     timeout: CLOUD_REQUEST_TIMEOUT_MS,
   });
 

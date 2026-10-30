@@ -2,6 +2,7 @@ import { createContext, useContext, useCallback, useEffect, useState, type React
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api } from '@/lib/supabase';
+import { clearFeedbackCache } from '@/lib/feedbackCache';
 import { useAuth } from '@/hooks/useAuth';
 import { EMPTY_DATA } from '@/constants/store';
 import type { StoreData, User, Snapshot } from '@/types/store';
@@ -90,7 +91,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const mutation = useMutation({
     mutationFn: ({ name, payload }: { name: string; payload: Record<string, unknown> }) =>
       api<Record<string, unknown>>('action', { action: name, payload }),
-    onSuccess: () => {
+    onSuccess: (_result, { name }) => {
+      if (name.startsWith('feedback.') || name === 'admin.feedback.moderate') clearFeedbackCache();
       void client.invalidateQueries({ queryKey: ['snapshot'] });
       void client.invalidateQueries({ queryKey: ['feed'] });
       void client.invalidateQueries({ queryKey: ['leaderboard'] });

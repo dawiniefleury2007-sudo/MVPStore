@@ -63,7 +63,12 @@ export async function api<T = unknown>(
       if (status === 401) throw new Error('Your session expired. Sign in again and retry.');
       if (status === 403 && serverMessage) throw new Error(serverMessage);
       if (status === 429) throw new Error('Too many requests. Wait a moment, then retry.');
-      if (status >= 500) throw new Error('The store service is temporarily unavailable. Please retry shortly.');
+      if (status === 502 || status === 503 || status === 504) {
+        throw new Error('The store service is temporarily unavailable. Please retry shortly.');
+      }
+      if (status >= 500) {
+        throw new Error('The store could not complete this request. Retry once, and contact support if it continues.');
+      }
       if (status === 400 && serverMessage) throw new Error(serverMessage);
       if (status === 404) throw new Error('This store feature is not available right now.');
       throw new Error('The store could not complete this request. Check the submitted information and retry.');

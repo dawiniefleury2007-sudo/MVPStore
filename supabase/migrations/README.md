@@ -16,6 +16,12 @@
 5. Create and email-verify `mvp-cheats@admin.com`. An operator must inspect the exact account UUID in Cloud > Users, replace the sentinel UUID in `supabase/setup/assign-admin.sql`, then execute that script using trusted SQL. It is intentionally **not** an automatic migration. No admin candidate existed during inspection, so no administrator was assigned.
 6. The administrator must explicitly publish products/plans, configure payment destinations, upload private archives, add setup links and grant reseller access. Nothing auto-publishes in the background.
 
+## Feedback query recovery (2026-10-30)
+- The local feedback query concatenated select fields without commas, generating an invalid PostgREST projection and a server error. The projection now separates fields and retains explicit foreign-key aliases for post and reply authors.
+- Run `node --test supabase/functions/_shared/feed.test.mjs` from the repository root. The regression checks the exact projection, publication/product filtering, pagination, response mapping and database-error handling.
+- Redeploy `mvp-api` with its shared modules for this source fix to take effect. No database migration or browser environment change is required for this correction.
+- Read-only live probes returned valid anonymous snapshot and feed responses (two products and two posts), but intermittent request timeouts also occurred. This does not establish that authenticated requests are healthy or that the deployed function matches local source. Persistent failures require the failed operation, timestamp and corresponding Edge logs; do not disclose session tokens or service keys.
+
 ## Email authentication
 - Hybrid email OTP + password registration, with 4-digit OTP and minimum password length 6 (current Cloud settings).
 - Ensure the verification email template includes `{{ .Token }}` so the OTP is visible. No SMTP or provider settings were changed or verified by the editor.

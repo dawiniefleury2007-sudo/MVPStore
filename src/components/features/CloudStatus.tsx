@@ -1,12 +1,14 @@
 import { useIsFetching } from '@tanstack/react-query';
+import { useLocation } from 'react-router-dom';
 import { CloudOff, RefreshCw } from 'lucide-react';
 import { useStore } from '@/stores/StoreProvider';
 
 export default function CloudStatus() {
   const { error, refresh } = useStore();
+  const { pathname } = useLocation();
   const retrying = useIsFetching({ queryKey: ['snapshot'] }) > 0;
 
-  if (!error) return null;
+  if (!error || pathname === '/' || pathname === '/products') return null;
 
   return (
     <aside

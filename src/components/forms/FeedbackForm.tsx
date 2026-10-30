@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,7 +11,6 @@ import { feedbackSchema } from '@/lib/validations';
 export default function FeedbackForm() {
   const { data, action, busy } = useStore();
   const navigate = useNavigate();
-  const [submissionError, setSubmissionError] = useState('');
   const upload = useUpload('mvp-feedback');
   const { register, watch, handleSubmit, formState: { errors, isSubmitting } } = useForm<z.infer<typeof feedbackSchema>>({
     resolver: zodResolver(feedbackSchema), defaultValues: { type: 'experience', title: '', productId: '' },
@@ -20,7 +18,6 @@ export default function FeedbackForm() {
   const productFeedback = watch('type') === 'product';
   const submitting = busy || isSubmitting;
   const submit = handleSubmit(async values => {
-    setSubmissionError('');
     if (!upload.path || upload.uploading) { toast.error('Upload your feedback image before publishing.'); return; }
     const result = await action('feedback.publish', {
       type: values.type, title: values.title, imagePath: upload.path,
@@ -29,8 +26,6 @@ export default function FeedbackForm() {
     if (result) {
       toast.success('Your feedback has been published.');
       navigate('/feedback');
-    } else {
-      setSubmissionError('Feedback could not be published. Check your connection and retry.');
     }
   });
 
@@ -55,7 +50,6 @@ export default function FeedbackForm() {
     {upload.preview && <img src={upload.preview} alt="Your feedback image preview" className="w-full max-h-80 object-contain rounded-xl bg-background/40" />}
     {upload.path && !upload.uploading && <p role="status" className="text-success">Image uploaded and ready to publish.</p>}
     <p className="text-muted">This image will be visible to the community. Remove account details, payment information and license keys before uploading.</p>
-    {submissionError && <p role="alert" className="text-danger">{submissionError}</p>}
     <button type="submit" aria-busy={submitting} className="btn w-full hover:-translate-y-0.5 disabled:transform-none" disabled={submitting || upload.uploading || !upload.path}><Send size={18} aria-hidden="true" />{submitting ? 'Publishing…' : 'Publish feedback'}</button>
   </form>;
 }
